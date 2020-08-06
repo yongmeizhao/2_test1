@@ -1,0 +1,230 @@
+# -*- coding = utf-8 -*-
+
+import docx
+import os,sys
+import re
+from openpyxl import Workbook
+
+#文件存储路径
+wdir='E:\pycharmProject\测试文件夹'
+
+
+#判断文件是否存在，若已经存在则删除
+
+print('移除前test目录下有文件：%s' %os.listdir(wdir))
+#判断文件是否存在
+if(os.path.exists(wdir+"/经验做法.doc")):
+    os.remove(wdir+"/经验做法.doc")
+    print('移除后test 目录下有文件：%s' %os.listdir(wdir))
+else:
+    print("要删除的文件不存在！")
+
+
+if(os.path.exists(wdir+"/经验做法.xls")):
+    os.remove(wdir+"/经验做法.xls")
+    print('移除后test 目录下有文件：%s' %os.listdir(wdir))
+else:
+    print("要删除的文件不存在！")
+
+if(os.path.exists(wdir+"/需上级关注的问题.doc")):
+    os.remove(wdir+"/需上级关注的问题.doc")
+    print('移除后test 目录下有文件：%s' %os.listdir(wdir))
+else:
+    print("要删除的文件不存在！")
+
+
+if(os.path.exists(wdir+"/需上级关注的问题.xls")):
+    os.remove(wdir+"/需上级关注的问题.xls")
+    print('移除后test 目录下有文件：%s' %os.listdir(wdir))
+else:
+    print("要删除的文件不存在！")
+
+
+
+#抽取文档中的段落
+def getpara(path):
+    try:
+        docx_temp = docx.Document(path)
+        print("open the docx")
+    except:
+        print("can't open the docx")
+        return False
+    try:
+
+        docx_para = docx_temp.paragraphs
+        print(docx_para)
+        print("Succeed getting the para:", path)
+        return docx_para
+
+    except:
+
+        print("can't get the ", path, " paragraphs")
+
+        return False
+
+
+# 从段落中抽取目标段落
+
+def findpara(parpas,start,end):
+
+  try:
+
+    para_list = []
+    s=0
+    start_pattern = re.compile(start)
+    end_pattern = re.compile(end)
+    for para in parpas:
+        match1 = start_pattern.search(para.text)
+        match2 = end_pattern.search(para.text)
+        if match1:
+            s=1
+        if  match2:
+            s=0
+            break
+        if s==1:
+            para_list.append(para.text)
+
+    para_list.pop(0)
+
+    return  para_list
+
+  except:
+
+    return False
+   # 2、将查找到的段落写入word文件
+
+
+# 将制定一个列表的内容写入word文件
+
+def list2Doc(path,list, name):  # 文件名默认为经验做法.doc
+
+     try:
+      if len(list):
+        fp = open(name, "a+")
+        fp.write(path)
+        fp.write("\n")
+        for cloe in list:
+            fp.write(cloe)
+            fp.write("\n")
+        fp.write("\n")
+     except:
+        return False
+     finally:
+
+        fp.close()
+
+
+
+
+# 切换工作路径 返回该路径下的文档列表
+
+def set_wd(wd):
+
+   if wd == wdir:
+
+     try:
+        os.chdir(wd)
+
+        File_List = os.listdir(wd)
+
+        return File_List
+
+     except:
+
+        print("Error")
+
+        return False
+   else:
+     try:
+        wd = os.getcwd()
+        os.chdir(wd)
+
+        print("Using the current path word")
+
+        File_List = os.listdir(wd)
+        return File_List
+
+     except:
+
+       print("Error")
+       return False
+
+
+# 获取经验做法导入EXCEL
+
+def jinYan(fileList):
+    workbook = Workbook()
+    booksheet = workbook.active
+    booksheet.append(['文件名', '经验做法'])
+
+    # 获取docx文档的所有段落 path : 相对路径包含文档名称
+    for i in fileList:
+        path=i
+        parpas=getpara(path)
+        list=findpara(parpas,"三、维修措施经验及建议","四、需上级关注的问题")
+
+        # print(list)
+        # list1 = findpara(parpas,"[关键字]","一、技术通报落实情况")  #抽取关键字
+        # print(list1)
+        # list.extend(list1)
+        #list2Doc(path,list,"经验做法.doc")
+
+        try:
+            if len(list):
+
+                for i in range(0, len(list)):
+                    listRow = []
+                    listRow.append(path)
+                    listRow.append(list[i])
+                    booksheet.append(listRow)
+                    #     fp = open("经验做法.xls", "a+")
+                    #     fp.write(path)
+                    #     for cloe in list:
+                    #         fp.write(cloe)
+                    # fp.write("\n")
+        except:
+            return False
+    workbook.save(wdir + "/经验做法.xls")
+
+
+# 获取需上级关注的问题导入EXCEL
+def wenTi(fileList):
+
+    workbook = Workbook()
+    booksheet = workbook.active
+    booksheet.append(['文件名', '需上级关注的问题'])
+
+    for i in fileList:
+        path=i
+        parpas=getpara(path)
+        list=findpara(parpas,"四、需上级关注的问题","发的发的发")
+
+        print(list)
+        # list1 = findpara(parpas,"[关键字]","一、技术通报落实情况")  #抽取关键字
+        # print(list1)
+        # list.extend(list1)
+        #list2Doc(path,list, "需上级关注的问题.doc")
+        try:
+            if len(list):
+
+                for i in range(0, len(list)):
+                    listRow = []
+                    listRow.append(path)
+                    listRow.append(list[i])
+                    booksheet.append(listRow)
+                    #     fp = open("经验做法.xls", "a+")
+                    #     fp.write(path)
+                    #     for cloe in list:
+                    #         fp.write(cloe)
+                    # fp.write("\n")
+        except:
+            return False
+    workbook.save(wdir + "/需上级关注的问题.xls")
+
+def main():
+    fileList=set_wd(wdir)
+    jinYan(fileList)
+    wenTi(fileList)
+
+
+main()
